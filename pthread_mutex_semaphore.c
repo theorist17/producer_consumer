@@ -2,14 +2,14 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-
 int buffer[100];
 int count = 0;
 int in = -1, out = -1;
+sem_t full, empty, mutex;
+
 //pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 void* producer(void *pData);
 void* consumer(void *pData);
-sem_t full, empty, mutex;
 
 int main(void)
 {
@@ -25,21 +25,22 @@ int main(void)
   		pthread_join(threads[i], NULL);
  	return 0;
 }
+
 void* producer(void *pData)
 {
  	int i;
  	for (i=0; i<1000; i++)
  	{
-		sem_wait(&mutex);
   		//pthread_mutex_lock(&mutex);
   		sem_wait(&empty);
+		sem_wait(&mutex);
    		in++; in %= 100;
    		buffer[in] = i;
   		count++;
   		printf("Produce data = %d, count = %d\n", buffer[in], count);
+		sem_post(&mutex);
   		sem_post(&full);
   		//pthread_mutex_unlock(&mutex);
-		sem_post(&mutex);
  
  	}
 	return NULL;
@@ -49,16 +50,17 @@ void* consumer(void *pData)
   	int i,data;
   	for (i=0; i<1000; i++)
   	{
-		sem_wait(&mutex);
    		//pthread_mutex_lock(&mutex);
    		sem_wait(&full);
+		sem_wait(&mutex);
     	out++; out %= 100;
     	data = buffer[out];
    		count--;
   		printf("Consume data = %d, count = %d\n", buffer[out], count);
+   		sem_post(&mutex);
 		sem_post(&empty);
    		//pthread_mutex_unlock(&mutex);
-   		sem_post(&mutex);
   	}
 	return NULL;
 }
+

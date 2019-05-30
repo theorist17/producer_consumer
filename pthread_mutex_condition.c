@@ -48,7 +48,7 @@ void* consumer(void *pData)
     	out++; out %= 100;
     	count--;
     	pthread_cond_signal(&buffer_has_space);
-		printf("Consumed data = %d, out = %d, count = %d\n", buffer[in], out, count);
+		printf("Consumed data = %d, out = %d, count = %d\n", buffer[out], out, count);
   		pthread_mutex_unlock(&mutex);
   	}	
 }
