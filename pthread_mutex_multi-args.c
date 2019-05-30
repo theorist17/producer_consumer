@@ -7,13 +7,13 @@
 int buffer[BUFFER_SIZE];
 int count = 0;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t full;
-pthread_cond_t empty;
+pthread_cond_t full = PTHREAD_COND_INITIALIZER;
+pthread_cond_t empty = PTHREAD_COND_INITIALIZER;
 void* produce(void *pData);
 void* consume(void *pData);
 struct thread_args {
 	int capacity;
-	const char *name;
+	constchar *name;
 };
 
 int main(void)
@@ -49,20 +49,20 @@ void* produce(void *_args)
 	for (i = 0; i < args->capacity; i++)
 	{
 		pthread_mutex_lock(&mutex);
-		if (count == TEST_CASE)
+		if (count == BUFFER_SIZE)
 		{
-			pthread_cond_wait(&full, &mutex);
 			printf("Produced to full buffer...\n");
+			pthread_cond_wait(&full, &mutex);
 		}
 		count++;
-		out++;
-		out %= args->capacity;
+		out++;	out %= args->capacity;
 		buffer[out] = i;
+		printf("Capacity : %d, Name : %s produced %d, Count : %d.\n",
+			args->capacity, args->name, buffer[out], count);
 		pthread_cond_signal(&empty);
 		pthread_mutex_unlock(&mutex);
-
-		printf("Capacity : %d, Name : %s produced %d.\n", args->capacity, args->name, buffer[out]);
 	}
+	return NULL;
 }
 
 void* consume(void *_args)
@@ -76,15 +76,16 @@ void* consume(void *_args)
 		pthread_mutex_lock(&mutex);
 		if (count == 0)
 		{
-			pthread_cond_wait(&empty, &mutex);
 			printf("Consumed to empty buffer...\n");
+			pthread_cond_wait(&empty, &mutex);
 		}
-		in++;
-		in %= args->capacity;
+		in++; in %= args->capacity;
 		count--;
+		printf("Capacity : %d, Name : %s consumed %d, Count : %d.\n", 
+			args->capacity, args->name, buffer[in], count);
 		pthread_cond_signal(&full);
 		pthread_mutex_unlock(&mutex);
 
-		printf("Capacity : %d, Name : %s consumed %d.\n", args->capacity, args->name, buffer[in]);
 	}
+	return NULL;
 }
